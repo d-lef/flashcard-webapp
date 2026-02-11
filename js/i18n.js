@@ -136,6 +136,7 @@ class I18n {
                 
                 // Modals
                 'modal.create_deck': 'Create New Deck',
+                'modal.edit_deck': 'Edit Deck',
                 'modal.deck_name': 'Deck name',
                 'modal.create_card': 'Create New Card',
                 'modal.edit_card': 'Edit Card',
@@ -193,7 +194,17 @@ class I18n {
                 'alerts.failed_delete_deck': 'Failed to delete deck. Please try again.',
                 'alerts.failed_delete_card': 'Failed to delete card. Please try again.',
                 'alerts.no_deck_selected': 'No deck selected. Please select a deck first.',
-                'alerts.failed_save_cards': 'Failed to save cards. Please try again.'
+                'alerts.failed_save_cards': 'Failed to save cards. Please try again.',
+                'alerts.confirm_delete_card': 'Are you sure you want to delete this card?',
+                'alerts.confirm_delete_card_detail': 'Are you sure you want to delete this card?\n\nFront: "{0}"\nBack: "{1}"\n\nThis action cannot be undone.',
+                'alerts.confirm_delete_deck': 'Are you sure you want to delete "{0}"?\n\nThis action cannot be undone.',
+                'alerts.confirm_delete_deck_with_cards': 'Are you sure you want to delete "{0}"?\n\nThis will permanently delete the deck and all {1} cards inside it. This action cannot be undone.',
+
+                // Dynamic UI strings
+                'decks.empty_state': 'No decks yet. Create your first deck!',
+                'decks.card_count': '{0} cards',
+                'decks.card_count_one': '1 card',
+                'cards.empty_state': 'No cards in this deck. Add your first card!'
             },
             
             ru: {
@@ -330,6 +341,7 @@ class I18n {
                 
                 // Modals
                 'modal.create_deck': 'Создать новую колоду',
+                'modal.edit_deck': 'Редактировать колоду',
                 'modal.deck_name': 'Название колоды',
                 'modal.create_card': 'Создать новую карточку',
                 'modal.edit_card': 'Редактировать карточку',
@@ -387,7 +399,17 @@ class I18n {
                 'alerts.failed_delete_deck': 'Не удалось удалить колоду. Попробуйте еще раз.',
                 'alerts.failed_delete_card': 'Не удалось удалить карточку. Попробуйте еще раз.',
                 'alerts.no_deck_selected': 'Колода не выбрана. Сначала выберите колоду.',
-                'alerts.failed_save_cards': 'Не удалось сохранить карточки. Попробуйте еще раз.'
+                'alerts.failed_save_cards': 'Не удалось сохранить карточки. Попробуйте еще раз.',
+                'alerts.confirm_delete_card': 'Вы уверены, что хотите удалить эту карточку?',
+                'alerts.confirm_delete_card_detail': 'Вы уверены, что хотите удалить эту карточку?\n\nЛицевая: "{0}"\nОбратная: "{1}"\n\nЭто действие нельзя отменить.',
+                'alerts.confirm_delete_deck': 'Вы уверены, что хотите удалить "{0}"?\n\nЭто действие нельзя отменить.',
+                'alerts.confirm_delete_deck_with_cards': 'Вы уверены, что хотите удалить "{0}"?\n\nЭто навсегда удалит колоду и все {1} карточек в ней. Это действие нельзя отменить.',
+
+                // Dynamic UI strings
+                'decks.empty_state': 'Пока нет колод. Создайте свою первую колоду!',
+                'decks.card_count': '{0} карточек',
+                'decks.card_count_one': '1 карточка',
+                'cards.empty_state': 'В этой колоде нет карточек. Добавьте первую карточку!'
             }
         };
         

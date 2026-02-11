@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flashcard-app-v33-remove-starrace';
+const CACHE_NAME = 'flashcard-app-v34-fix-streaks';
 const urlsToCache = [
   '/',
   '/index.html',

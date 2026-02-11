@@ -20,11 +20,7 @@ class Statistics {
             const startDate = this.getLocalDateString(new Date(this.currentYear, this.currentMonth, 1));
             const endDate = this.getLocalDateString(new Date(this.currentYear, this.currentMonth + 1, 0));
 
-            // SAFETY: Don't access database in test mode
-            let reviewStats = [];
-            if (!(window.testModeDetector && window.testModeDetector.isTestingMode())) {
-                reviewStats = await window.supabaseService.getReviewStats(startDate, endDate);
-            }
+            const reviewStats = await this.getMergedReviewStats(startDate, endDate);
             
             // Get today's stats
             const today = this.getLocalDateString();
@@ -112,17 +108,7 @@ class Statistics {
             const startDate = this.getLocalDateString(yearAgo);
             const endDate = this.getLocalDateString(today);
 
-            // SAFETY: Don't access database in test mode
-            let reviewStats = [];
-            if (!(window.testModeDetector && window.testModeDetector.isTestingMode())) {
-                reviewStats = await window.supabaseService.getReviewStats(startDate, endDate);
-            }
-
-            // Fallback to local storage if database is unavailable (test mode or offline)
-            if (reviewStats.length === 0) {
-                reviewStats = this.getLocalReviewStats(startDate, endDate);
-                console.log(`📊 Using local review stats for streak calculation: ${reviewStats.length} entries`);
-            }
+            const reviewStats = await this.getMergedReviewStats(startDate, endDate);
             
             // Create a set of complete study days (where all due cards were studied)
             const completeStudyDays = new Set(
@@ -352,28 +338,57 @@ class Statistics {
         // Set internal date tracking to match the requested date
         this.currentYear = date.getFullYear();
         this.currentMonth = date.getMonth();
-        
+
         // Get stats for the month
         const startDate = this.getLocalDateString(new Date(this.currentYear, this.currentMonth, 1));
         const endDate = this.getLocalDateString(new Date(this.currentYear, this.currentMonth + 1, 0));
-        
-        let monthStats = [];
-        try {
-            // SAFETY: Don't access database in test mode
-            if (window.supabaseService && !(window.testModeDetector && window.testModeDetector.isTestingMode())) {
-                monthStats = await window.supabaseService.getReviewStats(startDate, endDate);
-            }
-        } catch (error) {
-            console.log('Could not fetch stats for calendar from Supabase:', error);
-        }
-        
-        // Fallback to local storage if Supabase fails
-        if (monthStats.length === 0) {
-            monthStats = this.getLocalReviewStats(startDate, endDate);
-        }
-        
+
+        const monthStats = await this.getMergedReviewStats(startDate, endDate);
+
         // Render to the specified container
         this.renderCalendarToContainer(container, monthStats, isCompact);
+    }
+
+    async getMergedReviewStats(startDate, endDate) {
+        let supabaseStats = [];
+        try {
+            if (window.supabaseService && !(window.testModeDetector && window.testModeDetector.isTestingMode())) {
+                supabaseStats = await window.supabaseService.getReviewStats(startDate, endDate);
+            }
+        } catch (error) {
+            console.log('Could not fetch stats from Supabase:', error);
+        }
+
+        const localStats = this.getLocalReviewStats(startDate, endDate);
+
+        // If no Supabase data, use localStorage entirely
+        if (supabaseStats.length === 0) {
+            return localStats;
+        }
+
+        // Merge: use Supabase as base, overlay localStorage all_due_completed
+        const localMap = {};
+        localStats.forEach(stat => {
+            localMap[stat.day] = stat;
+        });
+
+        const merged = supabaseStats.map(stat => {
+            const localStat = localMap[stat.day];
+            if (localStat && localStat.all_due_completed === true && stat.all_due_completed !== true) {
+                return { ...stat, all_due_completed: true };
+            }
+            return stat;
+        });
+
+        // Add any localStorage-only days not present in Supabase
+        const supabaseDays = new Set(supabaseStats.map(s => s.day));
+        localStats.forEach(stat => {
+            if (!supabaseDays.has(stat.day)) {
+                merged.push(stat);
+            }
+        });
+
+        return merged;
     }
 
     getLocalReviewStats(startDate, endDate) {
@@ -389,7 +404,7 @@ class Statistics {
                             reviews: stats.cardsReviewed || 0,
                             correct: stats.correctAnswers || 0,
                             lapses: (stats.cardsReviewed || 0) - (stats.correctAnswers || 0),
-                            all_due_completed: stats.allDueCompleted || null
+                            all_due_completed: stats.allDueCompleted != null ? stats.allDueCompleted : null
                         }));
                 }
                 return [];
@@ -415,7 +430,7 @@ class Statistics {
                         reviews: stats.reviews || 0,
                         correct: stats.correct || 0,
                         lapses: stats.lapses || 0,
-                        all_due_completed: stats.all_due_completed || null
+                        all_due_completed: stats.all_due_completed != null ? stats.all_due_completed : null
                     });
                 }
             }

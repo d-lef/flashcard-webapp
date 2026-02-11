@@ -339,7 +339,7 @@ class FlashcardApp {
         const decksList = document.getElementById('decks-list');
         
         if (decks.length === 0) {
-            decksList.innerHTML = '<div class="empty-state"><p>No decks yet. Create your first deck!</p></div>';
+            decksList.innerHTML = `<div class="empty-state"><p>${window.i18n.translate('decks.empty_state')}</p></div>`;
             return;
         }
         
@@ -352,7 +352,7 @@ class FlashcardApp {
                     </div>
                     <div class="deck-content">
                         <h3>${this.escapeHtml(deck.name)}</h3>
-                        <div class="card-count">${deck.cards.length} cards</div>
+                        <div class="card-count">${deck.cards.length === 1 ? window.i18n.translate('decks.card_count_one') : window.i18n.translate('decks.card_count').replace('{0}', deck.cards.length)}</div>
                     </div>
                 </div>
             `;
@@ -399,7 +399,7 @@ class FlashcardApp {
         
         const cardsList = document.getElementById('cards-list');
         if (this.currentDeck.cards.length === 0) {
-            cardsList.innerHTML = '<div class="empty-state"><p>No cards in this deck. Add your first card!</p></div>';
+            cardsList.innerHTML = `<div class="empty-state"><p>${window.i18n.translate('cards.empty_state')}</p></div>`;
             return;
         }
         
@@ -1221,8 +1221,8 @@ class FlashcardApp {
         this.editingDeck = null;
         
         // Reset modal labels to default
-        document.querySelector('#new-deck-modal h3').textContent = 'Create New Deck';
-        document.getElementById('create-deck').textContent = 'Create';
+        document.querySelector('#new-deck-modal h3').textContent = window.i18n.translate('modal.create_deck');
+        document.getElementById('create-deck').textContent = window.i18n.translate('actions.create');
     }
 
     async createDeck() {
@@ -1413,7 +1413,7 @@ class FlashcardApp {
             const formattedDate = new Date(dueDate).toLocaleDateString();
             document.getElementById('stats-due-date').textContent = formattedDate;
         } else {
-            document.getElementById('stats-due-date').textContent = 'Not scheduled';
+            document.getElementById('stats-due-date').textContent = window.i18n.translate('card_stats.not_scheduled');
         }
 
         // Show modal
@@ -1434,35 +1434,44 @@ class FlashcardApp {
 
     renderEditCard() {
         if (!this.editingCard) return;
-        
+
         // Set form values
         document.getElementById('edit-card-front-input').value = this.editingCard.front;
         document.getElementById('edit-card-back-input').value = this.editingCard.back;
-        
+
         // Set card type toggle (checkbox: unchecked = flip, checked = flip_type)
         const cardType = this.editingCard.card_type || 'flip_type';
         const toggle = document.getElementById('edit-card-type-toggle');
         toggle.checked = cardType === 'flip_type';
-        
+
         // Update visual feedback
         this.updateToggleLabels(cardType === 'flip_type');
-        
-        // Add event listener for toggle changes
-        toggle.addEventListener('change', () => {
-            this.updateToggleLabels(toggle.checked);
+
+        // Clean up previous listeners by replacing elements with clones
+        const oldToggle = toggle;
+        const newToggle = oldToggle.cloneNode(true);
+        oldToggle.parentNode.replaceChild(newToggle, oldToggle);
+        newToggle.checked = cardType === 'flip_type';
+        newToggle.addEventListener('change', () => {
+            this.updateToggleLabels(newToggle.checked);
         });
-        
-        // Add click handlers for labels
-        document.getElementById('flip-label').addEventListener('click', () => {
-            toggle.checked = false;
+
+        const oldFlipLabel = document.getElementById('flip-label');
+        const newFlipLabel = oldFlipLabel.cloneNode(true);
+        oldFlipLabel.parentNode.replaceChild(newFlipLabel, oldFlipLabel);
+        newFlipLabel.addEventListener('click', () => {
+            newToggle.checked = false;
             this.updateToggleLabels(false);
         });
-        
-        document.getElementById('flip-type-label').addEventListener('click', () => {
-            toggle.checked = true;
+
+        const oldFlipTypeLabel = document.getElementById('flip-type-label');
+        const newFlipTypeLabel = oldFlipTypeLabel.cloneNode(true);
+        oldFlipTypeLabel.parentNode.replaceChild(newFlipTypeLabel, oldFlipTypeLabel);
+        newFlipTypeLabel.addEventListener('click', () => {
+            newToggle.checked = true;
             this.updateToggleLabels(true);
         });
-        
+
         // Focus on back input (which should be filled first)
         document.getElementById('edit-card-back-input').focus();
     }
@@ -1485,7 +1494,7 @@ class FlashcardApp {
         const back = document.getElementById('edit-card-back-input').value.trim();
         
         if (!front || !back) {
-            alert('Please fill in both front and back of the card');
+            alert(window.i18n.translate('alerts.fill_both_sides'));
             return;
         }
 
@@ -1509,18 +1518,28 @@ class FlashcardApp {
 
     async deleteCurrentCard() {
         if (!this.editingCard || !this.currentDeck) return;
-        
-        if (!confirm('Are you sure you want to delete this card?')) return;
-        
-        // Remove card from deck
-        this.currentDeck.cards = this.currentDeck.cards.filter(c => c.id !== this.editingCard.id);
-        
-        await storage.saveDeck(this.currentDeck);
-        
-        // Go back to deck view
-        this.showView('deck');
-        this.renderDeckView();
-        this.editingCard = null;
+
+        if (!confirm(window.i18n.translate('alerts.confirm_delete_card'))) return;
+
+        try {
+            // Delete from Supabase first
+            if (window.supabaseService && !(window.testModeDetector && window.testModeDetector.isTestingMode())) {
+                await window.supabaseService.deleteCard(this.editingCard.id);
+            }
+
+            // Remove card from deck locally
+            this.currentDeck.cards = this.currentDeck.cards.filter(c => c.id !== this.editingCard.id);
+
+            await storage.saveDeck(this.currentDeck);
+
+            // Go back to deck view
+            this.showView('deck');
+            this.renderDeckView();
+            this.editingCard = null;
+        } catch (error) {
+            alert(window.i18n.translate('alerts.failed_delete_card'));
+            console.error('Delete card error:', error);
+        }
     }
 
     async saveCard() {
@@ -1700,8 +1719,8 @@ class FlashcardApp {
         document.getElementById('deck-name-input').focus();
         
         // Update modal for editing
-        document.querySelector('#new-deck-modal h3').textContent = 'Edit Deck';
-        document.getElementById('create-deck').textContent = 'Save';
+        document.querySelector('#new-deck-modal h3').textContent = window.i18n.translate('modal.edit_deck');
+        document.getElementById('create-deck').textContent = window.i18n.translate('actions.save');
     }
 
     async deleteDeck(deckId) {
@@ -1710,9 +1729,9 @@ class FlashcardApp {
         if (!deck) return;
 
         const cardCount = deck.cards.length;
-        const message = cardCount > 0 
-            ? `Are you sure you want to delete "${deck.name}"?\n\nThis will permanently delete the deck and all ${cardCount} cards inside it. This action cannot be undone.`
-            : `Are you sure you want to delete "${deck.name}"?\n\nThis action cannot be undone.`;
+        const message = cardCount > 0
+            ? window.i18n.translate('alerts.confirm_delete_deck_with_cards').replace('{0}', deck.name).replace('{1}', cardCount)
+            : window.i18n.translate('alerts.confirm_delete_deck').replace('{0}', deck.name);
 
         if (confirm(message)) {
             try {
@@ -1733,7 +1752,7 @@ class FlashcardApp {
         const card = this.currentDeck.cards.find(c => c.id === cardId);
         if (!card) return;
 
-        if (confirm(`Are you sure you want to delete this card?\n\nFront: "${card.front}"\nBack: "${card.back}"\n\nThis action cannot be undone.`)) {
+        if (confirm(window.i18n.translate('alerts.confirm_delete_card_detail').replace('{0}', card.front).replace('{1}', card.back))) {
             try {
                 // Delete card from Supabase first
                 // SAFETY: Don't delete from database in test mode
@@ -2253,8 +2272,7 @@ class FlashcardApp {
 
             // Count how many were completed today
             let completedToday = 0;
-            studyCards.forEach(cardData => {
-                const card = cardData.card;
+            studyCards.forEach(card => {
                 const lastReviewed = card.lastReviewed || card.last_reviewed;
                 if (lastReviewed) {
                     const reviewedDate = lastReviewed.split('T')[0];
