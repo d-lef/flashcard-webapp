@@ -3,8 +3,7 @@ class Settings {
         this.settings = {
             theme: 'light',
             language: 'ru',
-            testingMode: false,
-            starRaceGame: true
+            testingMode: false
         };
 
         // Race condition protection
@@ -51,8 +50,6 @@ class Settings {
         const themeToggle = document.getElementById('theme-toggle');
         const langToggle = document.getElementById('lang-toggle');
         const testingToggle = document.getElementById('testing-toggle');
-        const starRaceToggle = document.getElementById('star-race-toggle');
-
         if (themeToggle) {
             themeToggle.checked = this.settings.theme === 'dark';
         }
@@ -63,10 +60,6 @@ class Settings {
 
         if (testingToggle) {
             testingToggle.checked = this.settings.testingMode;
-        }
-
-        if (starRaceToggle) {
-            starRaceToggle.checked = this.settings.starRaceGame;
         }
     }
     
@@ -107,44 +100,6 @@ class Settings {
             });
         }
 
-        // Star Race toggle
-        const starRaceToggle = document.getElementById('star-race-toggle');
-        if (starRaceToggle) {
-            starRaceToggle.addEventListener('change', (e) => {
-                this.setStarRaceGame(e.target.checked);
-            });
-        }
-
-        // Game rules navigation
-        const spaceshipName = document.getElementById('spaceship-name');
-        const spaceshipDescription = document.getElementById('spaceship-description');
-        const backFromGameRules = document.getElementById('back-from-game-rules');
-
-        if (spaceshipName) {
-            spaceshipName.addEventListener('click', () => {
-                this.showGameRules();
-            });
-            spaceshipName.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                this.showGameRules();
-            });
-        }
-
-        if (spaceshipDescription) {
-            spaceshipDescription.addEventListener('click', () => {
-                this.showGameRules();
-            });
-            spaceshipDescription.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                this.showGameRules();
-            });
-        }
-
-        if (backFromGameRules) {
-            backFromGameRules.addEventListener('click', () => {
-                this.hideGameRules();
-            });
-        }
     }
     
     setTheme(theme) {
@@ -157,12 +112,6 @@ class Settings {
         this.settings.language = language;
         this.saveSettings();
         this.applyLanguage();
-    }
-
-    setStarRaceGame(enabled) {
-        this.settings.starRaceGame = enabled;
-        this.saveSettings();
-        console.log(enabled ? '🌟 Star Race game enabled' : '🌟 Star Race game disabled');
     }
 
     setTestingMode(enabled) {
@@ -273,28 +222,12 @@ class Settings {
         return this.settings.testingMode;
     }
 
-    isStarRaceEnabled() {
-        return this.settings.starRaceGame;
-    }
-
     getSetting(key) {
         return this.settings[key];
     }
     
     getAllSettings() {
         return { ...this.settings };
-    }
-
-    showGameRules() {
-        if (window.app) {
-            window.app.showView('game-rules');
-        }
-    }
-
-    hideGameRules() {
-        if (window.app) {
-            window.app.showView('settings');
-        }
     }
 
     // MEMORY LEAK PREVENTION: Cleanup method to clear all timeouts

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flashcard-app-v32-vendor-libs';
+const CACHE_NAME = 'flashcard-app-v33-remove-starrace';
 const urlsToCache = [
   '/',
   '/index.html',

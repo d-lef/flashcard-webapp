@@ -14,11 +14,6 @@ class FlashcardApp {
         this.selectedCardType = 'flip_type'; // Default card type
         this.cardFormOrigin = 'deck'; // Track where card form was accessed from: 'deck' or 'card-type'
 
-        // Star Race game state
-        this.lastGameCompletedCardsAgo = 0;
-        this.cardsStudiedSinceLastGame = 0;
-        this.hasPlayedStarRaceGame = false;
-        
         this.initializeApp();
     }
 
@@ -785,22 +780,16 @@ class FlashcardApp {
         
         this.studySession.cardsStudied++;
         this.currentCardIndex++;
-        this.cardsStudiedSinceLastGame++;
 
         if (this.currentCardIndex >= this.currentStudyCards.length) {
             this.finishStudySession();
         } else {
-            // Check if Star Race game should trigger
-            if (this.shouldTriggerStarRace()) {
-                this.startStarRaceGame();
-            } else {
-                // Reset interfaces for next card
-                if (this.studyMode === 'type') {
-                    document.querySelector('.typing-input-area').style.display = 'flex';
-                    document.getElementById('inline-result').style.display = 'none';
-                }
-                this.renderStudyCard();
+            // Reset interfaces for next card
+            if (this.studyMode === 'type') {
+                document.querySelector('.typing-input-area').style.display = 'flex';
+                document.getElementById('inline-result').style.display = 'none';
             }
+            this.renderStudyCard();
         }
     }
     
@@ -954,20 +943,14 @@ class FlashcardApp {
     
     moveToNextPair() {
         this.currentCardIndex++;
-        this.cardsStudiedSinceLastGame++;
 
         if (this.currentCardIndex >= this.combinedPairs.length) {
             this.finishStudySession();
         } else {
-            // Check if Star Race game should trigger
-            if (this.shouldTriggerStarRace()) {
-                this.startStarRaceGame();
-            } else {
-                // Reset typing interface
-                document.querySelector('.typing-input-area').style.display = 'flex';
-                document.getElementById('inline-result').style.display = 'none';
-                this.renderStudyCard();
-            }
+            // Reset typing interface
+            document.querySelector('.typing-input-area').style.display = 'flex';
+            document.getElementById('inline-result').style.display = 'none';
+            this.renderStudyCard();
         }
     }
 
@@ -2593,163 +2576,6 @@ class FlashcardApp {
         } catch (error) {
             console.error('Error saving phrasal verb card:', error);
             alert(window.i18n.translate('alerts.failed_save_card'));
-        }
-    }
-
-    // Star Race Game Integration
-    shouldTriggerStarRace() {
-        // Check if Star Race is enabled in settings
-        if (!window.settings || !window.settings.isStarRaceEnabled()) {
-            return false;
-        }
-
-        // Calculate remaining cards (after current card is completed)
-        const remainingCards = this.studyMode === 'combined'
-            ? this.combinedPairs.length - this.currentCardIndex - 1
-            : this.currentStudyCards.length - this.currentCardIndex - 1;
-
-        const shouldTrigger = StarRaceGame.shouldTrigger(remainingCards, this.cardsStudiedSinceLastGame, this.hasPlayedStarRaceGame);
-
-        if (shouldTrigger) {
-            console.log(`🌟 Star Race triggered! Remaining cards: ${remainingCards}, Cards since last game: ${this.cardsStudiedSinceLastGame}`);
-        }
-
-        return shouldTrigger;
-    }
-
-    startStarRaceGame() {
-        console.log('🌟 Starting Star Race game!');
-
-        // Get remaining cards for the game (up to 5 cards for the game)
-        const remainingCards = this.studyMode === 'combined'
-            ? this.combinedPairs.slice(this.currentCardIndex, this.currentCardIndex + 5).map(pair => pair.card)
-            : this.currentStudyCards.slice(this.currentCardIndex, this.currentCardIndex + 5);
-
-        console.log(`🌟 Starting Star Race with ${remainingCards.length} cards`);
-
-        // Start the game
-        window.starRaceGame.startGame(
-            remainingCards,
-            (card, difficulty, starsEarned) => this.onStarRaceComplete(card, difficulty, starsEarned),
-            () => this.onStarRaceExit(),
-            (currentFront) => this.getStarRaceDistractors(currentFront),
-            (card, difficulty) => this.markCardInStarRace(card, difficulty)
-        );
-    }
-
-    onStarRaceComplete(card, difficulty, starsEarned) {
-        console.log(`🌟 Star Race completed! Difficulty: ${difficulty}, Stars: ${starsEarned}`);
-
-        // Reset game tracking and mark that a game has been played
-        this.cardsStudiedSinceLastGame = 0;
-        this.hasPlayedStarRaceGame = true;
-
-        // Skip the cards that were processed in the game
-        // The game will have marked each card as it was answered
-        const cardsProcessedInGame = window.starRaceGame.currentCardIndex || 0;
-        this.currentCardIndex += cardsProcessedInGame;
-
-        console.log(`🌟 Skipping ${cardsProcessedInGame} cards processed in Star Race`);
-
-        // Continue to next card
-        this.continueAfterStarRace();
-    }
-
-    async markCardInStarRace(card, difficulty) {
-        try {
-            console.log(`🌟 Marking card in Star Race: "${card.front}" as ${difficulty}`);
-
-            // Update card with spaced repetition
-            const updatedCard = spacedRepetition.updateCardAfterReview(card, difficulty);
-            await this.updateCardInStorage(updatedCard);
-
-            // Track review stats
-            await this.trackReviewStat(difficulty, updatedCard.id);
-
-            // Increment cards studied counter
-            this.cardsStudiedToday++;
-            this.cardsStudiedSinceLastGame++;
-
-            console.log(`🌟 Card marked successfully in Star Race`);
-        } catch (error) {
-            console.error('Error marking card in Star Race:', error);
-        }
-    }
-
-    onStarRaceExit() {
-        console.log('🌟 Star Race exited early');
-
-        // Reset game tracking and mark that a game has been played
-        this.cardsStudiedSinceLastGame = 0;
-        this.hasPlayedStarRaceGame = true;
-
-        // Continue to next card without updating the current card
-        this.continueAfterStarRace();
-    }
-
-    async handleStarRaceResult(card, difficulty) {
-        try {
-            // Update card with spaced repetition
-            const updatedCard = spacedRepetition.updateCardAfterReview(card, difficulty);
-            await this.updateCardInStorage(updatedCard);
-
-            // Track review stats
-            await this.trackReviewStat(difficulty, updatedCard.id);
-
-            console.log(`🌟 Card updated with ${difficulty} difficulty from Star Race`);
-        } catch (error) {
-            console.error('Error updating card from Star Race:', error);
-        }
-    }
-
-    continueAfterStarRace() {
-        // Reset interfaces for next card
-        if (this.studyMode === 'type') {
-            document.querySelector('.typing-input-area').style.display = 'flex';
-            document.getElementById('inline-result').style.display = 'none';
-        }
-
-        // Render the next card
-        this.renderStudyCard();
-    }
-
-    getStarRaceDistractors(currentFront) {
-        // Get all cards from all decks to use as distractors
-        const allCards = [];
-
-        try {
-            // Get cards from current study session
-            if (this.studyMode === 'combined' && this.combinedPairs) {
-                this.combinedPairs.forEach(pair => {
-                    if (pair.card && pair.card.front && pair.card.front !== currentFront) {
-                        allCards.push(pair.card.front);
-                    }
-                });
-            } else if (this.currentStudyCards) {
-                this.currentStudyCards.forEach(card => {
-                    if (card && card.front && card.front !== currentFront) {
-                        allCards.push(card.front);
-                    }
-                });
-            }
-
-            // If we don't have enough distractors from current study cards,
-            // try to get more from the current deck
-            if (allCards.length < 5 && this.currentDeck && this.currentDeck.cards) {
-                this.currentDeck.cards.forEach(card => {
-                    if (card && card.front && card.front !== currentFront && !allCards.includes(card.front)) {
-                        allCards.push(card.front);
-                    }
-                });
-            }
-
-            // Shuffle and return 2-4 distractors
-            const shuffled = allCards.sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, Math.min(4, shuffled.length));
-
-        } catch (error) {
-            console.error('Error generating Star Race distractors:', error);
-            return [window.i18n.translate('game.wrong_answer_fallback_1'), window.i18n.translate('game.wrong_answer_fallback_2')]; // fallback
         }
     }
 

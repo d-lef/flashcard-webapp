@@ -173,24 +173,6 @@
                         </div>
                     </div>
 
-                    <div class="settings-section">
-                        <h3 data-i18n="settings.gamification">Gamification</h3>
-                        <div class="setting-row">
-                            <span data-i18n="settings.spaceship" class="clickable-setting" id="spaceship-name">Spaceship Game</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="star-race-toggle">
-                                <span class="slider"></span>
-                                <span class="toggle-labels">
-                                    <span data-i18n="settings.off">OFF</span>
-                                    <span data-i18n="settings.on">ON</span>
-                                </span>
-                            </label>
-                        </div>
-                        <div class="setting-description">
-                            <small data-i18n="settings.spaceship_description" class="clickable-setting" id="spaceship-description">Space-themed mini-game. Tap here to see the rules.</small>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>
@@ -437,57 +419,6 @@
             <div id="cards-list" class="cards-list"></div>
         </div>
 
-        <!-- Game Rules View -->
-        <div id="game-rules-view" class="view">
-            <div class="game-rules-container">
-                <button id="back-from-game-rules" class="back-btn edit-card-back-btn">← <span data-i18n="actions.back">Back</span></button>
-                <div class="game-rules-header">
-                    <h2 data-i18n="game.rules_title">Spaceship Game Rules</h2>
-                </div>
-                <div class="game-rules-content">
-                    <p data-i18n="game.rule_1">Control your spaceship with the up/down buttons and fire with the rocket button.</p>
-                    <p data-i18n="game.rule_2">When you shoot the correct answer, you earn a star and the card is marked with Good difficulty in the spaced repetition system.</p>
-                    <p data-i18n="game.rule_3">When you shoot an incorrect answer, no star is earned and the card is marked with Hard difficulty, meaning it will appear more frequently for review.</p>
-                    <p data-i18n="game.rule_4">When you bump into the correct answer with your spaceship, you earn a star and the card is marked with Easy difficulty in the spaced repetition system.</p>
-                    <p data-i18n="game.rule_5">When you bump into an incorrect answer with your spaceship, no star is earned and the card is marked with Again difficulty, meaning it will be shown immediately for re-study.</p>
-                    <p data-i18n="game.rule_6">The game integrates with the spaced repetition algorithm to optimize your learning schedule based on your performance.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Star Race Game Overlay -->
-    <div id="star-race-overlay" class="game-overlay">
-        <div id="star-race-container" class="game-container">
-            <div class="game-header">
-                <button id="star-race-exit" class="game-exit-btn">✕</button>
-                <div class="game-score">
-                    <div class="stars-counter">
-                        <span id="stars-earned">0</span>/5 ⭐
-                    </div>
-                </div>
-            </div>
-            <div id="star-race-question" class="game-question">
-                <p id="star-race-question-text"></p>
-            </div>
-            <canvas id="star-race-canvas" class="game-canvas"></canvas>
-            <div id="star-race-controls" class="game-controls">
-                <button id="star-race-up" class="game-control-btn">▲</button>
-                <button id="star-race-attack" class="game-control-btn attack-btn">🚀</button>
-                <button id="star-race-down" class="game-control-btn">▼</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Game Result Modal -->
-    <div id="star-race-result-modal" class="modal game-modal">
-        <div class="modal-content game-modal-content">
-            <h3 id="star-race-result-title"></h3>
-            <p id="star-race-result-message"></p>
-            <div class="modal-actions">
-                <button id="star-race-continue" class="primary-btn" data-i18n="actions.continue">Continue</button>
-            </div>
-        </div>
     </div>
 
     <!-- Modals -->
@@ -553,7 +484,6 @@
     <script src="js/supabase-client.js?v=20250826b"></script>
     <script src="js/storage.js?v=20250826a"></script>
     <script src="js/spaced-repetition.js?v=20250820c"></script>
-    <script src="js/star-race.js"></script>
     <script src="js/i18n.js?v=20250826c"></script>
     <script src="js/settings.js?v=20250820c"></script>
     <script src="js/statistics.js?v=20250820c"></script>
