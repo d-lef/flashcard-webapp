@@ -559,11 +559,12 @@ class FlashcardApp {
             
             document.getElementById('card-front').textContent = card.front;
             document.getElementById('card-back').textContent = card.back;
-            
+            this.updateDeckLabel(card);
+
             document.getElementById('flashcard').classList.remove('flipped');
             document.getElementById('flip-card').style.display = 'none'; // Hide flip button
             document.querySelector('.difficulty-buttons').style.display = 'none';
-            
+
             this.isCardFlipped = false;
             
             // Apply entrance animation
@@ -584,6 +585,7 @@ class FlashcardApp {
             document.getElementById('combined-progress').style.display = 'none';
             
             document.getElementById('typing-front').textContent = card.front;
+            this.updateDeckLabel(card);
             document.getElementById('typing-input').value = '';
             document.getElementById('inline-result').style.display = 'none';
             document.getElementById('typing-input').focus();
@@ -632,6 +634,21 @@ class FlashcardApp {
         });
     }
     
+    updateDeckLabel(card) {
+        const isStudyAll = this.studySession && this.studySession.isStudyAll && card.deckName;
+        const flipLabel = document.getElementById('flip-deck-label');
+        const typingLabel = document.getElementById('typing-deck-label');
+        if (flipLabel) {
+            flipLabel.textContent = isStudyAll ? card.deckName : '';
+            flipLabel.style.display = isStudyAll ? 'block' : 'none';
+        }
+        if (typingLabel) {
+            // Typing label shows on the hint/feedback side, not the question side
+            typingLabel.textContent = isStudyAll ? card.deckName : '';
+            typingLabel.style.display = 'none';
+        }
+    }
+
     initializeCombinedPairs() {
         this.combinedPairs = [];
         this.combinedCardStates = new Map();
@@ -1064,11 +1081,13 @@ class FlashcardApp {
     }
     
     showTypingFeedback(result, userAnswer, correctAnswer, difficulty) {
-        console.log('showTypingFeedback called with:', { result, userAnswer, correctAnswer, difficulty });
-        
+        // Show deck label on the hint/feedback side
+        const label = document.getElementById('typing-deck-label');
+        if (label && label.textContent) label.style.display = 'block';
+
         // Hide the typing input area
         document.querySelector('.typing-input-area').style.display = 'none';
-        
+
         // Show inline feedback in the typing interface
         const inlineResult = document.getElementById('inline-result');
         const inlineStatus = document.getElementById('inline-status');
@@ -1076,13 +1095,6 @@ class FlashcardApp {
         const inlineUserAnswer = document.getElementById('inline-user-answer');
         const continueContainer = document.getElementById('continue-button-container');
         const checkBtn = document.getElementById('check-answer');
-        
-        console.log('Elements found:', { 
-            inlineResult: !!inlineResult, 
-            inlineStatus: !!inlineStatus, 
-            inlineCorrectAnswer: !!inlineCorrectAnswer, 
-            checkBtn: !!checkBtn 
-        });
         
         if (!inlineResult || !inlineStatus || !inlineCorrectAnswer || !inlineUserAnswer || !continueContainer) {
             console.error('Missing required elements for inline feedback');
@@ -1122,7 +1134,6 @@ class FlashcardApp {
         // Show the inline result and continue button
         inlineResult.style.display = 'block';
         continueContainer.style.display = 'block';
-        console.log('Inline result should now be visible');
         
         // Add continue button click handler
         const continueBtn = document.getElementById('continue-typing');
@@ -1133,8 +1144,6 @@ class FlashcardApp {
         document.getElementById('continue-typing').addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Continue button clicked by user');
-            
             // Hide inline result and show typing input again for next card
             inlineResult.style.display = 'none';
             continueContainer.style.display = 'none';
@@ -1149,7 +1158,6 @@ class FlashcardApp {
             }
         });
         
-        console.log('showTypingFeedback completed successfully');
     }
     
     

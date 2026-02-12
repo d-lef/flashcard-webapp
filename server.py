@@ -95,6 +95,21 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Flashcard App", lifespan=lifespan)
 
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if path.endswith(('.js', '.css', '.html')) or path == '/':
+            response.headers["Cache-Control"] = "no-store"
+        return response
+
+app.add_middleware(NoCacheMiddleware)
+
+
 # ── Helpers ──────────────────────────────────────────────────────────
 
 def row_to_dict(row):
@@ -359,7 +374,11 @@ async def populate_phrasal_verbs():
 
 @app.get("/")
 async def index():
-    return FileResponse(APP_DIR / "index.html")
+    return FileResponse(APP_DIR / "index.html", headers={"Cache-Control": "no-cache"})
+
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse(APP_DIR / "sw.js", media_type="application/javascript")
 
 app.mount("/", StaticFiles(directory=APP_DIR), name="static")
 

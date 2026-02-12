@@ -982,6 +982,18 @@ nav::-webkit-scrollbar {
     color: var(--primary-color);
 }
 
+/* Deck label shown during study-all sessions */
+.study-deck-label {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    font-size: 0.75rem;
+    color: var(--text-color);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 1;
+}
+
 /* Study view */
 .study-header {
     display: flex;
@@ -1350,6 +1362,7 @@ nav::-webkit-scrollbar {
 }
 
 .typing-question {
+    position: relative;
     background: var(--card-bg);
     border-radius: 16px;
     padding: 2rem;

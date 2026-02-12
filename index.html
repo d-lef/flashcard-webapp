@@ -6,7 +6,7 @@
     <title>Flashcard App</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="css/styles.css?v=20250826b">
+    <link rel="stylesheet" href="css/styles.css?v=5">
     <meta name="theme-color" content="#4285f4">
     
     <!-- Mobile web app support -->
@@ -208,6 +208,7 @@
                     <div id="card-front" class="card-text"></div>
                 </div>
                 <div class="card-content back">
+                    <div id="flip-deck-label" class="study-deck-label" style="display:none"></div>
                     <div id="card-back" class="card-text"></div>
                     <div class="difficulty-buttons">
                         <button id="again-btn" class="diff-btn again" data-i18n="difficulty.again">Again</button>
@@ -222,6 +223,7 @@
             <div id="typing-interface" class="typing-interface" style="display: none;">
                 <div class="typing-question">
                     <div id="typing-front" class="typing-text"></div>
+                    <div id="typing-deck-label" class="study-deck-label" style="display:none"></div>
                     <!-- Inline result display -->
                     <div id="inline-result" class="inline-result" style="display: none;">
                         <div class="result-divider"></div>
@@ -478,18 +480,25 @@
 
 
     <script src="js/vendor/confetti.min.js"></script>
-    <script src="js/test-mode-detector.js"></script>
-    <script src="js/test-data.js"></script>
-    <script src="js/api-client.js"></script>
-    <script src="js/storage.js?v=20250826a"></script>
-    <script src="js/spaced-repetition.js?v=20250820c"></script>
-    <script src="js/i18n.js?v=20250826c"></script>
-    <script src="js/settings.js?v=20250820c"></script>
-    <script src="js/statistics.js?v=20250820c"></script>
-    <script src="js/app.js?v=20250826d"></script>
+    <script src="js/test-mode-detector.js?v=5"></script>
+    <script src="js/test-data.js?v=5"></script>
+    <script src="js/api-client.js?v=5"></script>
+    <script src="js/storage.js?v=5"></script>
+    <script src="js/spaced-repetition.js?v=5"></script>
+    <script src="js/i18n.js?v=5"></script>
+    <script src="js/settings.js?v=5"></script>
+    <script src="js/statistics.js?v=5"></script>
+    <script src="js/app.js?v=5"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            // Force unregister old SW, then register fresh
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                Promise.all(regs.map(r => r.unregister())).then(() => {
+                    caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
+                        navigator.serviceWorker.register('sw.js');
+                    });
+                });
+            });
         }
     </script>
 </body>

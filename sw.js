@@ -1,7 +1,5 @@
-const CACHE_NAME = 'flashcard-app-v35-sqlite-migration';
+const CACHE_NAME = 'flashcard-app-v38-label-hint-side';
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/css/styles.css',
   '/js/app.js',
   '/js/storage.js',
@@ -43,12 +41,24 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
   // Never cache API requests — always go to network
-  if (event.request.url.includes('/api/')) {
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
+  // Network-first for HTML (index.html / navigation) so updates are picked up immediately
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first for static assets (JS, CSS, images)
   event.respondWith(
     caches.match(event.request)
       .then(response => {
