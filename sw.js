@@ -1,10 +1,11 @@
-const CACHE_NAME = 'flashcard-app-v38-label-hint-side';
+const CACHE_NAME = 'flashcard-app-v39-supabase-revert';
 const urlsToCache = [
   '/css/styles.css',
   '/js/app.js',
   '/js/storage.js',
   '/js/spaced-repetition.js',
-  '/js/api-client.js',
+  '/js/supabase-client.js',
+  '/js/vendor/supabase.js',
   '/js/statistics.js',
   '/js/i18n.js',
   '/js/settings.js',
@@ -42,12 +43,6 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-
-  // Never cache API requests — always go to network
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
 
   // Network-first for HTML (index.html / navigation) so updates are picked up immediately
   if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {

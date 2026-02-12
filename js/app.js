@@ -1164,11 +1164,13 @@ class FlashcardApp {
     
     async finishStudySession() {
         if (this.studySession && this.studySession.isStudyAll) {
-            // Check if all due cards have been completed at session end
-            const allDueCompleted = await this.checkAllDueCompleted();
+            // Only update streak when studying "due today" cards
+            const allDueCompleted = this.studySession.studyType === 'due'
+                ? await this.checkAllDueCompleted()
+                : null;
             const today = this.getLocalDateString();
-            
-            // Update the final all_due_completed status in review stats
+
+            // Update review stats (only sets all_due_completed for 'due' sessions)
             // SAFETY: Don't update database in test mode
             if (window.supabaseService && !(window.testModeDetector && window.testModeDetector.isTestingMode())) {
                 await window.supabaseService.updateReviewStats(today, null, allDueCompleted, false);
@@ -1708,9 +1710,10 @@ class FlashcardApp {
         this.studySession = {
             startTime: new Date(),
             cardsStudied: 0,
-            isStudyAll: true
+            isStudyAll: true,
+            studyType: studyType
         };
-        
+
         this.startStudySessionWithMode('combined');
     }
 
@@ -2195,45 +2198,41 @@ class FlashcardApp {
         }
     }
 
-    // Check if all due cards (due today + overdue) have been completed
+    // Check if all cards due TODAY (not overdue) have been completed
     async checkAllDueCompleted() {
         try {
             const decks = await storage.loadDecks();
             const today = this.getLocalDateString();
 
-            // Count all due cards (due today + overdue)
-            let totalDueCards = 0;
-            let completedDueCards = 0;
+            // Count only cards due exactly today (not overdue, not new)
+            let totalDueToday = 0;
+            let completedDueToday = 0;
 
             decks.forEach(deck => {
                 deck.cards.forEach(card => {
                     const cardDueDate = card.dueDate || card.due_date || card.nextReview;
 
-                    // Skip new cards (never studied) — only due/overdue count
+                    // Skip new cards (never studied)
                     if (!cardDueDate || (card.reps || card.repetitions || 0) === 0) {
                         return;
                     }
 
-                    if (cardDueDate.split('T')[0] <= today) {
-                        totalDueCards++;
+                    if (cardDueDate.split('T')[0] === today) {
+                        totalDueToday++;
 
-                        // Check if card was reviewed today (has lastReviewed date = today)
+                        // Check if card was reviewed today
                         const lastReviewed = card.lastReviewed || card.last_reviewed;
                         if (lastReviewed) {
                             const reviewedDate = lastReviewed.split('T')[0];
                             if (reviewedDate === today) {
-                                completedDueCards++;
+                                completedDueToday++;
                             }
                         }
                     }
                 });
             });
 
-            // All due cards completed if:
-            // 1. There are no due cards (0 total = all completed by definition), OR
-            // 2. There are due cards and all of them are completed
-            const allCompleted = totalDueCards === 0 || completedDueCards >= totalDueCards;
-            console.log(`Due cards check: ${completedDueCards}/${totalDueCards} completed, all due completed: ${allCompleted}`);
+            const allCompleted = totalDueToday === 0 || completedDueToday >= totalDueToday;
 
             return allCompleted;
         } catch (error) {
