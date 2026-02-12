@@ -444,13 +444,17 @@ class FlashcardApp {
 
     showStudyModeSelection() {
         if (!this.currentDeck) return;
-        
+
         // For deck study, include ALL cards regardless of schedule
         if (this.currentDeck.cards.length === 0) {
             alert(window.i18n.translate('alerts.no_cards_in_deck'));
             return;
         }
-        
+
+        // Clear any previous study-all session so startStudySessionWithMode
+        // takes the single-deck branch instead of reusing stale study-all state
+        this.studySession = null;
+
         // Directly start combined mode instead of showing mode selection
         this.startStudySessionWithMode('combined');
     }
