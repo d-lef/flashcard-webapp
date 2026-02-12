@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flashcard-app-v34-fix-streaks';
+const CACHE_NAME = 'flashcard-app-v35-sqlite-migration';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -6,11 +6,10 @@ const urlsToCache = [
   '/js/app.js',
   '/js/storage.js',
   '/js/spaced-repetition.js',
-  '/js/supabase-client.js',
+  '/js/api-client.js',
   '/js/statistics.js',
   '/js/i18n.js',
   '/js/settings.js',
-  '/js/vendor/supabase.js',
   '/js/vendor/confetti.min.js',
   '/manifest.json'
 ];
@@ -44,6 +43,12 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Never cache API requests — always go to network
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -55,4 +60,3 @@ self.addEventListener('fetch', event => {
     )
   );
 });
-
