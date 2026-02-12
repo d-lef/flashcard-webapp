@@ -2197,24 +2197,18 @@ class FlashcardApp {
                 deck.cards.forEach(card => {
                     const cardDueDate = card.dueDate || card.due_date || card.nextReview;
 
-                    // Include new cards and due/overdue cards (same logic as getCardsForStudy)
+                    // Skip new cards (never studied) — only due/overdue count
                     if (!cardDueDate || (card.reps || card.repetitions || 0) === 0) {
-                        totalDueCards++; // New cards count as due
-                        // Check if new card was reviewed today
-                        const lastReviewed = card.lastReviewed || card.last_reviewed;
-                        if (lastReviewed) {
-                            const reviewedDate = lastReviewed.split('T')[0]; // Extract date part
-                            if (reviewedDate === today) {
-                                completedDueCards++;
-                            }
-                        }
-                    } else if (cardDueDate.split('T')[0] <= today) {
+                        return;
+                    }
+
+                    if (cardDueDate.split('T')[0] <= today) {
                         totalDueCards++;
 
                         // Check if card was reviewed today (has lastReviewed date = today)
                         const lastReviewed = card.lastReviewed || card.last_reviewed;
                         if (lastReviewed) {
-                            const reviewedDate = lastReviewed.split('T')[0]; // Extract date part
+                            const reviewedDate = lastReviewed.split('T')[0];
                             if (reviewedDate === today) {
                                 completedDueCards++;
                             }
