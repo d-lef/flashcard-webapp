@@ -255,12 +255,15 @@ class FlashcardApp {
             totalCards += deck.cards.length;
             deck.cards.forEach(card => {
                 const cardDueDate = card.dueDate || card.due_date || card.nextReview;
-                
-                // Separate new cards from due cards
-                if (!cardDueDate || (card.reps || card.repetitions || 0) === 0) {
-                    newCardsCount++; // New cards count separately
-                } else {
-                    const cardDueDateOnly = cardDueDate.split('T')[0]; // Handle both date and datetime
+                const reps = card.reps || card.repetitions || 0;
+                const lapses = card.lapses || 0;
+
+                // Truly new card: never studied (reps === 0 AND lapses === 0)
+                if (reps === 0 && lapses === 0) {
+                    newCardsCount++;
+                } else if (cardDueDate) {
+                    // Card has been studied - categorize by due date
+                    const cardDueDateOnly = cardDueDate.split('T')[0];
                     if (cardDueDateOnly === today) {
                         dueCount++; // Due today
                     } else if (cardDueDateOnly < today) {
@@ -2211,13 +2214,16 @@ class FlashcardApp {
             decks.forEach(deck => {
                 deck.cards.forEach(card => {
                     const cardDueDate = card.dueDate || card.due_date || card.nextReview;
+                    const reps = card.reps || card.repetitions || 0;
+                    const lapses = card.lapses || 0;
 
-                    // Skip new cards (never studied)
-                    if (!cardDueDate || (card.reps || card.repetitions || 0) === 0) {
+                    // Skip truly new cards (never studied: reps === 0 AND lapses === 0)
+                    if (reps === 0 && lapses === 0) {
                         return;
                     }
 
-                    if (cardDueDate.split('T')[0] === today) {
+                    // Card has been studied - check if due today
+                    if (cardDueDate && cardDueDate.split('T')[0] === today) {
                         totalDueToday++;
 
                         // Check if card was reviewed today

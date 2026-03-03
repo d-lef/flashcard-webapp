@@ -3,6 +3,15 @@ class SpacedRepetition {
         this.maxInterval = 36500; // ~100 years max
     }
 
+    // Helper function to get local date string (YYYY-MM-DD)
+    // Fixes timezone bug: toISOString() returns UTC date which differs from local date near midnight
+    getLocalDateString(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     // Proper SM-2 Algorithm implementation
     calculateNextReview(card, difficulty) {
         const now = new Date();
@@ -66,8 +75,8 @@ class SpacedRepetition {
             reps,
             lapses,
             grade,
-            dueDate: nextReview.toISOString().split('T')[0], // Date only
-            lastReviewed: now.toISOString().split('T')[0], // Date only
+            dueDate: this.getLocalDateString(nextReview), // Date only (local timezone)
+            lastReviewed: this.getLocalDateString(now), // Date only (local timezone)
             nextReview: nextReview.toISOString(),
             // Legacy compatibility
             easeFactor: ease,
@@ -76,17 +85,20 @@ class SpacedRepetition {
     }
 
     getCardsForStudy(deck, limit = 20) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getLocalDateString();
         const studyCards = [];
 
         for (const card of deck.cards) {
             const dueDate = card.dueDate || card.due_date || card.nextReview;
-            
-            if (!dueDate || (card.reps || card.repetitions || 0) === 0) {
-                // New card
+            const reps = card.reps || card.repetitions || 0;
+            const lapses = card.lapses || 0;
+
+            // Truly new card: never studied (reps === 0 AND lapses === 0)
+            if (reps === 0 && lapses === 0) {
                 studyCards.push({...card, isNew: true});
-            } else {
-                const cardDueDate = dueDate.split('T')[0]; // Handle both date and datetime
+            } else if (dueDate) {
+                // Card has been studied before - check if due
+                const cardDueDate = dueDate.split('T')[0];
                 if (cardDueDate <= today) {
                     studyCards.push({...card, isDue: true});
                 }
@@ -112,13 +124,16 @@ class SpacedRepetition {
     }
 
     getCardsDueToday(deck) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getLocalDateString();
         const dueCards = [];
 
         for (const card of deck.cards) {
             const dueDate = card.dueDate || card.due_date || card.nextReview;
-            
-            if (dueDate && (card.reps || card.repetitions || 0) > 0) {
+            const reps = card.reps || card.repetitions || 0;
+            const lapses = card.lapses || 0;
+
+            // Card has been studied before (either has reps > 0 OR lapses > 0)
+            if (dueDate && (reps > 0 || lapses > 0)) {
                 const cardDueDate = dueDate.split('T')[0];
                 if (cardDueDate === today) {
                     dueCards.push({...card, isDue: true});
@@ -130,13 +145,16 @@ class SpacedRepetition {
     }
 
     getOverdueCards(deck) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getLocalDateString();
         const overdueCards = [];
 
         for (const card of deck.cards) {
             const dueDate = card.dueDate || card.due_date || card.nextReview;
-            
-            if (dueDate && (card.reps || card.repetitions || 0) > 0) {
+            const reps = card.reps || card.repetitions || 0;
+            const lapses = card.lapses || 0;
+
+            // Card has been studied before (either has reps > 0 OR lapses > 0)
+            if (dueDate && (reps > 0 || lapses > 0)) {
                 const cardDueDate = dueDate.split('T')[0];
                 if (cardDueDate < today) {
                     overdueCards.push({...card, isOverdue: true});
@@ -151,9 +169,12 @@ class SpacedRepetition {
         const newCards = [];
 
         for (const card of deck.cards) {
-            const dueDate = card.dueDate || card.due_date || card.nextReview;
-            
-            if (!dueDate || (card.reps || card.repetitions || 0) === 0) {
+            // A card is truly new only if it has never been studied
+            // Cards with lapses > 0 have been studied before (and failed), so they're not new
+            const reps = card.reps || card.repetitions || 0;
+            const lapses = card.lapses || 0;
+
+            if (reps === 0 && lapses === 0) {
                 newCards.push({...card, isNew: true});
             }
         }
@@ -162,17 +183,20 @@ class SpacedRepetition {
     }
 
     getDueCount(deck) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getLocalDateString();
         let dueCount = 0;
 
         for (const card of deck.cards) {
             const dueDate = card.dueDate || card.due_date || card.nextReview;
-            
-            if (!dueDate || (card.reps || card.repetitions || 0) === 0) {
-                // New card
+            const reps = card.reps || card.repetitions || 0;
+            const lapses = card.lapses || 0;
+
+            // Truly new card: never studied
+            if (reps === 0 && lapses === 0) {
                 dueCount++;
-            } else {
-                const cardDueDate = dueDate.split('T')[0]; // Handle both date and datetime
+            } else if (dueDate) {
+                // Card has been studied - check if due
+                const cardDueDate = dueDate.split('T')[0];
                 if (cardDueDate <= today) {
                     dueCount++;
                 }
