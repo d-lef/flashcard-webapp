@@ -462,83 +462,57 @@ class SupabaseService {
         }
 
         console.log('Updating review stats for:', { date, isCorrect, allDueCompleted });
-        
-        // Prepare the stats object
-        const statsUpdate = {
+
+        // Always fetch current stats first to properly increment
+        const { data: current, error: selectError } = await this.client
+            .from('review_stats')
+            .select('reviews, correct, lapses, all_due_completed')
+            .eq('day', date)
+            .single();
+
+        if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows found
+            console.error('Failed to get current stats:', selectError);
+            throw selectError;
+        }
+
+        // Build stats with incremented values
+        const newStats = {
             day: date
         };
-        
-        // Only add review counters if this is an actual review (isCorrect is not null)
+
         if (isCorrect !== null) {
-            statsUpdate.reviews = 1; // Count every time a difficulty button is pressed
-            statsUpdate.correct = isCorrect ? 1 : 0;
-            statsUpdate.lapses = isCorrect ? 0 : 1;
+            // Increment review counters
+            newStats.reviews = (current?.reviews || 0) + 1;
+            newStats.correct = (current?.correct || 0) + (isCorrect ? 1 : 0);
+            newStats.lapses = (current?.lapses || 0) + (isCorrect ? 0 : 1);
+        } else {
+            // Preserve existing values when only updating all_due_completed
+            newStats.reviews = current?.reviews || 0;
+            newStats.correct = current?.correct || 0;
+            newStats.lapses = current?.lapses || 0;
         }
-        
-        // Only include all_due_completed if explicitly provided
+
+        // Handle all_due_completed
         if (allDueCompleted !== null) {
-            statsUpdate.all_due_completed = allDueCompleted;
+            newStats.all_due_completed = allDueCompleted;
+        } else if (current?.all_due_completed !== undefined) {
+            newStats.all_due_completed = current.all_due_completed;
         }
-        
-        // Upsert review stats for the day
-        const { data, error } = await this.client
+
+        // Upsert the stats
+        const { error: upsertError } = await this.client
             .from('review_stats')
-            .upsert(statsUpdate, {
+            .upsert(newStats, {
                 onConflict: 'day',
                 ignoreDuplicates: false
             });
 
-        if (error) {
-            // If upsert failed, try to increment existing record
-            console.log('Upsert failed, trying increment approach:', error);
-            
-            // First get current stats
-            const { data: current, error: selectError } = await this.client
-                .from('review_stats')
-                .select('reviews, correct, lapses, all_due_completed')
-                .eq('day', date)
-                .single();
-
-            if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows found
-                console.error('Failed to get current stats:', selectError);
-                throw selectError;
-            }
-
-            // Update with incremented values
-            const newStats = {
-                day: date
-            };
-            
-            // Only increment review counters if this is an actual review
-            if (isCorrect !== null) {
-                newStats.reviews = (current?.reviews || 0) + 1; // Count every difficulty button press
-                newStats.correct = (current?.correct || 0) + (isCorrect ? 1 : 0);
-                newStats.lapses = (current?.lapses || 0) + (isCorrect ? 0 : 1);
-            } else {
-                // Preserve existing values when only updating all_due_completed
-                newStats.reviews = current?.reviews || 0;
-                newStats.correct = current?.correct || 0;
-                newStats.lapses = current?.lapses || 0;
-            }
-            
-            // Only update all_due_completed if explicitly provided
-            if (allDueCompleted !== null) {
-                newStats.all_due_completed = allDueCompleted;
-            } else if (current?.all_due_completed !== undefined) {
-                newStats.all_due_completed = current.all_due_completed;
-            }
-
-            const { error: updateError } = await this.client
-                .from('review_stats')
-                .upsert(newStats);
-
-            if (updateError) {
-                console.error('Failed to update review stats:', updateError);
-                throw updateError;
-            }
+        if (upsertError) {
+            console.error('Failed to upsert review stats:', upsertError);
+            throw upsertError;
         }
 
-        console.log('Review stats updated successfully');
+        console.log('Review stats updated successfully:', newStats);
         return true;
     }
 
