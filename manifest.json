@@ -2,7 +2,7 @@
   "name": "Flashcard App",
   "short_name": "Flashcards",
   "description": "A PWA flashcard app with spaced repetition",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4285f4",

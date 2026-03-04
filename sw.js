@@ -1,16 +1,18 @@
-const CACHE_NAME = 'flashcard-app-v39-supabase-revert';
+const CACHE_NAME = 'flashcard-app-v40-pwa-fix';
 const urlsToCache = [
-  '/css/styles.css',
-  '/js/app.js',
-  '/js/storage.js',
-  '/js/spaced-repetition.js',
-  '/js/supabase-client.js',
-  '/js/vendor/supabase.js',
-  '/js/statistics.js',
-  '/js/i18n.js',
-  '/js/settings.js',
-  '/js/vendor/confetti.min.js',
-  '/manifest.json'
+  './',
+  './css/styles.css',
+  './js/app.js',
+  './js/storage.js',
+  './js/spaced-repetition.js',
+  './js/supabase-client.js',
+  './js/vendor/supabase.js',
+  './js/statistics.js',
+  './js/i18n.js',
+  './js/settings.js',
+  './js/translation.js',
+  './js/vendor/confetti.min.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', event => {
