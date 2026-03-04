@@ -1,7 +1,7 @@
 // Translation service for English → Russian suggestions
 const translationService = {
-    // Configure your LibreTranslate server URL here
-    apiUrl: 'https://translate.your-server.com/translate',
+    // LibreTranslate server
+    apiUrl: 'https://translate.mono-ai.uk/translate',
 
     // Debounce timer
     debounceTimer: null,
