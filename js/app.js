@@ -1357,7 +1357,19 @@ class FlashcardApp {
         // Clear form fields
         document.getElementById('card-form-front-input').value = '';
         document.getElementById('card-form-back-input').value = '';
-        
+
+        // Clear any previous translation suggestions
+        const suggestionsContainer = document.getElementById('translation-suggestions');
+        if (suggestionsContainer) {
+            suggestionsContainer.innerHTML = '';
+            suggestionsContainer.style.display = 'none';
+        }
+
+        // Initialize translation suggestions
+        if (window.translationService) {
+            window.translationService.init();
+        }
+
         // Focus on back input (which should be filled first)
         document.getElementById('card-form-back-input').focus();
     }
