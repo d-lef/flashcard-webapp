@@ -1,7 +1,7 @@
-// Translation service for English → Russian suggestions
+// Translation service for English → Russian suggestions (MyMemory API)
 const translationService = {
-    // LibreTranslate server
-    apiUrl: 'https://translate.mono-ai.uk/translate',
+    // MyMemory API (free, fast, 1000 req/day)
+    apiUrl: 'https://api.mymemory.translated.net/get',
 
     // Initialize translation button on card form
     init() {
@@ -52,22 +52,15 @@ const translationService = {
             button.innerHTML = '<span class="translate-icon spin">↻</span> ...';
             button.disabled = true;
 
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    q: text,
-                    source: 'en',
-                    target: 'ru'
-                })
-            });
+            const url = `${this.apiUrl}?q=${encodeURIComponent(text)}&langpair=en|ru`;
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error('Translation failed');
             }
 
             const data = await response.json();
-            const translation = data.translatedText;
+            const translation = data.responseData?.translatedText;
 
             // Restore button
             button.innerHTML = originalText;
