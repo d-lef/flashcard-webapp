@@ -60,19 +60,21 @@ const translationService = {
             }
 
             const data = await response.json();
-            const translation = data.responseData?.translatedText;
 
             // Restore button
             button.innerHTML = originalText;
             button.disabled = false;
 
-            if (!translation) {
+            // Extract unique Russian translations from matches
+            const translations = this.extractTranslations(data);
+
+            if (translations.length === 0) {
                 container.innerHTML = '';
                 container.style.display = 'none';
                 return;
             }
 
-            this.renderSuggestions([translation], container);
+            this.renderSuggestions(translations, container);
 
         } catch (error) {
             // Restore button and fail silently
@@ -82,6 +84,37 @@ const translationService = {
             container.innerHTML = '';
             container.style.display = 'none';
         }
+    },
+
+    extractTranslations(data) {
+        const seen = new Set();
+        const translations = [];
+
+        // Add primary translation first
+        const primary = data.responseData?.translatedText;
+        if (primary && this.isRussian(primary)) {
+            seen.add(primary.toLowerCase());
+            translations.push(primary);
+        }
+
+        // Add unique translations from matches
+        if (data.matches && Array.isArray(data.matches)) {
+            for (const match of data.matches) {
+                const t = match.translation;
+                // Only include Russian text, skip duplicates, limit to 4 total
+                if (t && this.isRussian(t) && !seen.has(t.toLowerCase()) && translations.length < 4) {
+                    seen.add(t.toLowerCase());
+                    translations.push(t);
+                }
+            }
+        }
+
+        return translations;
+    },
+
+    isRussian(text) {
+        // Check if text contains Cyrillic characters
+        return /[а-яА-ЯёЁ]/.test(text);
     },
 
     renderSuggestions(translations, container) {
