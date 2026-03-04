@@ -2767,7 +2767,53 @@ nav::-webkit-scrollbar {
     }
 }
 
-/* Translation Suggestions */
+/* Translation Button & Suggestions */
+.translate-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 10px 20px;
+    margin-top: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    color: white;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.translate-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 1px 4px rgba(102, 126, 234, 0.2);
+}
+
+.translate-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.translate-icon {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.translate-icon.spin {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .translation-suggestions {
     display: none;
     flex-wrap: wrap;
@@ -2780,13 +2826,14 @@ nav::-webkit-scrollbar {
 .translation-chip {
     min-height: 44px;
     padding: 10px 18px;
-    background: var(--primary-alpha-light);
-    border: 1px solid var(--primary-border-light);
+    background: var(--card-bg);
+    border: 2px solid var(--primary-color);
     border-radius: 22px;
     cursor: pointer;
     font-size: 16px;
     font-family: inherit;
-    color: var(--text-primary);
+    color: var(--primary-color);
+    font-weight: 500;
     transition: all 0.15s ease;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
@@ -2796,17 +2843,5 @@ nav::-webkit-scrollbar {
     background: var(--primary-color);
     color: white;
     transform: scale(0.96);
-}
-
-.translation-loading,
-.translation-empty,
-.translation-error {
-    padding: 10px 0;
-    font-size: 14px;
-    color: var(--text-muted);
-}
-
-.translation-error {
-    color: var(--danger-color);
 }
 

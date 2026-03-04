@@ -3,10 +3,7 @@ const translationService = {
     // LibreTranslate server
     apiUrl: 'https://translate.mono-ai.uk/translate',
 
-    // Debounce timer
-    debounceTimer: null,
-
-    // Initialize translation suggestions on card form inputs
+    // Initialize translation button on card form
     init() {
         this.setupCardFormTranslation();
     },
@@ -19,6 +16,17 @@ const translationService = {
         if (backInput.dataset.translationInit === 'true') return;
         backInput.dataset.translationInit = 'true';
 
+        // Create translate button if it doesn't exist
+        let translateBtn = document.getElementById('translate-btn');
+        if (!translateBtn) {
+            translateBtn = document.createElement('button');
+            translateBtn.id = 'translate-btn';
+            translateBtn.type = 'button';
+            translateBtn.className = 'translate-btn';
+            translateBtn.innerHTML = '<span class="translate-icon">→</span> Translate';
+            backInput.parentNode.appendChild(translateBtn);
+        }
+
         // Create suggestions container if it doesn't exist
         let container = document.getElementById('translation-suggestions');
         if (!container) {
@@ -28,41 +36,21 @@ const translationService = {
             backInput.parentNode.appendChild(container);
         }
 
-        // Listen for input changes (debounced)
-        backInput.addEventListener('input', (e) => {
-            this.handleInput(e.target.value, container);
-        });
-
-        // Also fetch on blur (when user taps away from keyboard)
-        backInput.addEventListener('blur', (e) => {
-            const word = e.target.value.trim();
-            if (word.length >= 2) {
-                clearTimeout(this.debounceTimer);
-                this.fetchTranslation(word, container);
+        // Translate on button tap
+        translateBtn.addEventListener('click', () => {
+            const word = backInput.value.trim();
+            if (word.length >= 1) {
+                this.fetchTranslation(word, container, translateBtn);
             }
         });
     },
 
-    handleInput(value, container) {
-        clearTimeout(this.debounceTimer);
-        const word = value.trim();
-
-        if (word.length < 2) {
-            container.innerHTML = '';
-            container.style.display = 'none';
-            return;
-        }
-
-        // Longer debounce for mobile typing (700ms)
-        this.debounceTimer = setTimeout(() => {
-            this.fetchTranslation(word, container);
-        }, 700);
-    },
-
-    async fetchTranslation(text, container) {
+    async fetchTranslation(text, container, button) {
         try {
-            container.innerHTML = '<div class="translation-loading">Translating...</div>';
-            container.style.display = 'block';
+            // Show loading state on button
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="translate-icon spin">↻</span> ...';
+            button.disabled = true;
 
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
@@ -81,6 +69,10 @@ const translationService = {
             const data = await response.json();
             const translation = data.translatedText;
 
+            // Restore button
+            button.innerHTML = originalText;
+            button.disabled = false;
+
             if (!translation) {
                 container.innerHTML = '';
                 container.style.display = 'none';
@@ -90,7 +82,9 @@ const translationService = {
             this.renderSuggestions([translation], container);
 
         } catch (error) {
-            // Fail silently - user can type translation manually
+            // Restore button and fail silently
+            button.innerHTML = '<span class="translate-icon">→</span> Translate';
+            button.disabled = false;
             console.error('Translation error:', error);
             container.innerHTML = '';
             container.style.display = 'none';
@@ -115,12 +109,10 @@ const translationService = {
                 const frontInput = document.getElementById('card-form-front-input');
                 if (frontInput) {
                     frontInput.value = chip.textContent;
-                    // Haptic feedback if available
                     if (navigator.vibrate) {
                         navigator.vibrate(10);
                     }
                 }
-                // Clear suggestions after selection
                 container.innerHTML = '';
                 container.style.display = 'none';
             });
