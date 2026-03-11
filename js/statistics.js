@@ -292,41 +292,11 @@ class Statistics {
             // Get stats for this day
             const dateStr = this.getLocalDateString(new Date(this.currentYear, this.currentMonth, day));
             const dayStat = monthStats ? monthStats.find(stat => stat.day === dateStr) : null;
-            
-            // Debug logging
-            if (dayStat) {
-                console.log(`Calendar day ${dateStr}:`, dayStat);
-            }
-            
-            // Only color days where ALL due cards were completed
+
+            // Only color days green where ALL due cards were completed, otherwise leave empty
             if (dayStat && dayStat.all_due_completed === true) {
-                let appliedClass = '';
-                
-                // Apply intensity based on number of reviews for complete study days
-                if (dayStat.reviews >= 50) {
-                    dayElement.classList.add('high-study');
-                    appliedClass = 'high-study';
-                } else if (dayStat.reviews >= 20) {
-                    dayElement.classList.add('medium-study');
-                    appliedClass = 'medium-study';
-                } else {
-                    dayElement.classList.add('complete-study');
-                    appliedClass = 'complete-study';
-                }
-                
-                console.log(`Day ${dateStr} applied class: ${appliedClass} (reviews: ${dayStat.reviews}, all_due_completed: ${dayStat.all_due_completed})`);
-                
-                // Add tooltip with stats
-                dayElement.title = `${dayStat.reviews} reviews, ${Math.round((dayStat.correct / dayStat.reviews) * 100)}% accuracy (All due completed)`;
-            } else {
-                // No color for incomplete study days or days with no study
-                dayElement.classList.add('no-study');
-                
-                // Add tooltip for incomplete study days
-                if (dayStat && dayStat.reviews > 0) {
-                    dayElement.title = `${dayStat.reviews} reviews, ${Math.round((dayStat.correct / dayStat.reviews) * 100)}% accuracy (Incomplete - not all due cards studied)`;
-                    console.log(`Day ${dateStr} - incomplete study (reviews: ${dayStat.reviews}, all_due_completed: ${dayStat.all_due_completed})`);
-                }
+                dayElement.classList.add('complete-study');
+                dayElement.title = `${dayStat.reviews} reviews, ${Math.round((dayStat.correct / dayStat.reviews) * 100)}% accuracy`;
             }
             
             calendarGrid.appendChild(dayElement);

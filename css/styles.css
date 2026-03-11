@@ -845,45 +845,10 @@ nav::-webkit-scrollbar {
     border: 2px solid var(--primary-color);
 }
 
-.calendar-day.no-study {
-    background: var(--border-color);
-    color: var(--text-secondary);
-}
-
-.calendar-day.low-study {
-    background: var(--blue-light);
-    color: var(--blue-text);
-}
-
-.calendar-day.medium-study {
-    background: var(--blue-hover);
-    color: var(--blue-text-hover);
-}
-
-.calendar-day.high-study {
-    background: var(--blue-medium);
-    color: white;
-}
-
 .calendar-day.complete-study {
     background: var(--green-color);
     color: white;
     border: 2px solid var(--green-border);
-}
-
-[data-theme="dark"] .calendar-day.low-study {
-    background: #1e3a5f;
-    color: #64b5f6;
-}
-
-[data-theme="dark"] .calendar-day.medium-study {
-    background: #2e5984;
-    color: #42a5f5;
-}
-
-[data-theme="dark"] .calendar-day.high-study {
-    background: var(--blue-medium);
-    color: white;
 }
 
 [data-theme="dark"] .calendar-day.complete-study {
