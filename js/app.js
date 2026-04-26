@@ -13,6 +13,7 @@ class FlashcardApp {
         this.combinedCardStates = new Map(); // tracks completion per card
         this.selectedCardType = 'flip_type'; // Default card type
         this.cardFormOrigin = 'deck'; // Track where card form was accessed from: 'deck' or 'card-type'
+        this.calendarDisplayDate = new Date(); // Track currently displayed calendar month
 
         this.initializeApp();
     }
@@ -20,6 +21,7 @@ class FlashcardApp {
     initializeApp() {
         this.setupEventListeners();
         this.setupSearchListeners();
+        this.setupCalendarNavigation();
         this.loadInitialView();
         this.updateStats();
 
@@ -211,6 +213,34 @@ class FlashcardApp {
                 searchInput.blur();
             }
         });
+    }
+
+    setupCalendarNavigation() {
+        const prevBtn = document.getElementById('calendar-prev-month');
+        const nextBtn = document.getElementById('calendar-next-month');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => this.navigateCalendar(-1));
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => this.navigateCalendar(1));
+        }
+    }
+
+    navigateCalendar(direction) {
+        const newDate = new Date(this.calendarDisplayDate);
+        newDate.setMonth(newDate.getMonth() + direction);
+
+        // Don't allow navigating to future months
+        const now = new Date();
+        if (newDate.getFullYear() > now.getFullYear() ||
+            (newDate.getFullYear() === now.getFullYear() && newDate.getMonth() > now.getMonth())) {
+            return;
+        }
+
+        this.calendarDisplayDate = newDate;
+        this.renderOverviewCalendar();
     }
 
     async performSearch(query) {
@@ -569,24 +599,33 @@ class FlashcardApp {
     }
 
     async renderOverviewCalendar() {
-        // Always show current month only
-        const currentDate = new Date();
-        
-        // Update month title
+        const displayDate = this.calendarDisplayDate || new Date();
+        const now = new Date();
+
+        // Update month title with localized format
         const monthElement = document.getElementById('overview-current-month');
         if (monthElement) {
-            monthElement.textContent = currentDate.toLocaleDateString('en-US', { 
-                month: 'long', 
-                year: 'numeric' 
+            const locale = window.i18n?.currentLanguage === 'ru' ? 'ru-RU' : 'en-US';
+            monthElement.textContent = displayDate.toLocaleDateString(locale, {
+                month: 'long',
+                year: 'numeric'
             });
         }
-        
+
+        // Update next button state - disable if viewing current month
+        const nextBtn = document.getElementById('calendar-next-month');
+        if (nextBtn) {
+            const isCurrentMonth = displayDate.getFullYear() === now.getFullYear() &&
+                                   displayDate.getMonth() === now.getMonth();
+            nextBtn.disabled = isCurrentMonth;
+        }
+
         // Render calendar using the same logic as statistics module
         const calendarContainer = document.getElementById('overview-study-calendar');
-        
+
         if (window.statistics && calendarContainer) {
             if (typeof window.statistics.renderCalendarMonth === 'function') {
-                await window.statistics.renderCalendarMonth(currentDate, calendarContainer, true);
+                await window.statistics.renderCalendarMonth(displayDate, calendarContainer, true);
             }
         }
     }

@@ -1026,10 +1026,22 @@ nav::-webkit-scrollbar {
     margin-bottom: 1.5rem;
 }
 
+.calendar-header-nav {
+    justify-content: center;
+    gap: 1rem;
+}
+
 .calendar-title {
     color: var(--text-primary);
     font-size: 1.3rem;
     margin: 0;
+}
+
+.calendar-title-centered {
+    min-width: 140px;
+    text-align: center;
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 .calendar-nav {
@@ -1037,10 +1049,30 @@ nav::-webkit-scrollbar {
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.25rem 0.75rem;
     border-radius: 8px;
     color: var(--text-secondary);
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.calendar-nav:hover {
+    background: var(--primary-alpha-light);
+    color: var(--primary-color);
+}
+
+.calendar-nav:active {
+    transform: scale(0.95);
+}
+
+.calendar-nav:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.calendar-nav:disabled:hover {
+    background: none;
+    color: var(--text-secondary);
 }
 
 
