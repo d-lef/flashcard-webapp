@@ -35,6 +35,13 @@ class I18n {
                 'search.no_results': 'No cards found',
                 'search.more_results': '+{count} more cards in this deck',
 
+                // Duplicate Warning
+                'duplicate.title': 'Duplicate Card Found',
+                'duplicate.message': 'A card with this front side already exists:',
+                'duplicate.in_deck': 'In deck:',
+                'duplicate.keep_anyway': 'Keep Anyway',
+                'duplicate.discard': 'Discard',
+
                 // Settings
                 'settings.title': 'Settings',
                 'settings.appearance': 'Appearance',
@@ -244,6 +251,13 @@ class I18n {
                 'search.placeholder': 'Поиск карточек...',
                 'search.no_results': 'Карточки не найдены',
                 'search.more_results': '+{count} карточек в этой колоде',
+
+                // Duplicate Warning
+                'duplicate.title': 'Найден дубликат',
+                'duplicate.message': 'Карточка с такой лицевой стороной уже существует:',
+                'duplicate.in_deck': 'В колоде:',
+                'duplicate.keep_anyway': 'Всё равно добавить',
+                'duplicate.discard': 'Отменить',
 
                 // Settings
                 'settings.title': 'Настройки',

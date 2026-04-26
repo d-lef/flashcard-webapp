@@ -343,6 +343,74 @@ class FlashcardApp {
         await this.openDeck(deckId);
     }
 
+    // Duplicate card detection
+    async checkForDuplicateCard(frontText, excludeDeckId = null) {
+        const decks = await storage.loadDecks();
+        const frontLower = frontText.toLowerCase().trim();
+
+        for (const deck of decks) {
+            // Optionally exclude the current deck (for editing existing cards)
+            if (excludeDeckId && deck.id === excludeDeckId) continue;
+
+            for (const card of deck.cards) {
+                if (card.front.toLowerCase().trim() === frontLower) {
+                    return {
+                        card: card,
+                        deck: deck
+                    };
+                }
+            }
+        }
+        return null;
+    }
+
+    showDuplicateWarning(duplicate, onKeep, onCancel) {
+        const modal = document.getElementById('duplicate-warning-modal');
+        const frontEl = document.getElementById('duplicate-card-front');
+        const backEl = document.getElementById('duplicate-card-back');
+        const deckNameEl = document.getElementById('duplicate-deck-name');
+        const keepBtn = document.getElementById('duplicate-keep');
+        const cancelBtn = document.getElementById('duplicate-cancel');
+
+        // Populate modal
+        frontEl.textContent = duplicate.card.front;
+        backEl.textContent = duplicate.card.back;
+        deckNameEl.textContent = duplicate.deck.name;
+
+        // Remove old listeners
+        const newKeepBtn = keepBtn.cloneNode(true);
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        keepBtn.parentNode.replaceChild(newKeepBtn, keepBtn);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+        // Add new listeners
+        newKeepBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+            if (onKeep) onKeep();
+        });
+
+        newCancelBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+            if (onCancel) onCancel();
+        });
+
+        // Close on backdrop click
+        const backdropHandler = (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                modal.removeEventListener('click', backdropHandler);
+                if (onCancel) onCancel();
+            }
+        };
+        modal.addEventListener('click', backdropHandler);
+
+        modal.classList.add('active');
+    }
+
+    hideDuplicateWarning() {
+        document.getElementById('duplicate-warning-modal').classList.remove('active');
+    }
+
     showView(viewName) {
         document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1565,53 +1633,54 @@ class FlashcardApp {
             console.log('saveNewCard: Starting card creation');
             const front = document.getElementById('card-form-front-input').value.trim();
             const back = document.getElementById('card-form-back-input').value.trim();
-            
+
             console.log('saveNewCard: Front/Back values:', { front, back });
-            
+
             if (!front || !back) {
                 alert(window.i18n.translate('alerts.fill_both_sides'));
                 return;
             }
 
-            console.log('saveNewCard: About to create newCard object');
-            console.log('saveNewCard: this.selectedCardType =', this.selectedCardType);
-            console.log('saveNewCard: this.currentDeck =', this.currentDeck);
-            console.log('saveNewCard: storage =', storage);
+            // Check for duplicate card
+            const duplicate = await this.checkForDuplicateCard(front);
+            if (duplicate) {
+                this.showDuplicateWarning(
+                    duplicate,
+                    () => this.proceedWithSaveNewCard(front, back), // onKeep
+                    null // onCancel - just close modal
+                );
+                return;
+            }
 
-            const newCard = {
-                id: storage.generateUUID(),
-                front: front,
-                back: back,
-                ease: 2.5,
-                interval: 1,
-                reps: 0,
-                lapses: 0,
-                dueDate: null, // Will be set after first review
-                lastReviewed: null,
-                createdAt: new Date().toISOString(),
-                card_type: this.selectedCardType, // Add the card type
-                isNew: true // Mark as new for Supabase sync
-            };
-            
-            console.log('saveNewCard: Created newCard:', newCard);
-
-            console.log('saveNewCard: About to push to currentDeck.cards');
-            this.currentDeck.cards.push(newCard);
-            console.log('saveNewCard: Pushed to deck, total cards now:', this.currentDeck.cards.length);
-            
-            console.log('saveNewCard: About to call storage.saveDeck');
-            await storage.saveDeck(this.currentDeck);
-            console.log('saveNewCard: storage.saveDeck completed');
-            
-            // Go back to deck view
-            console.log('saveNewCard: About to show deck view');
-            this.showView('deck');
-            this.renderDeckView();
-            console.log('saveNewCard: Completed successfully');
+            // No duplicate, proceed with save
+            await this.proceedWithSaveNewCard(front, back);
         } catch (error) {
             console.error('saveNewCard: Error occurred:', error);
             console.error('saveNewCard: Error stack:', error.stack);
         }
+    }
+
+    async proceedWithSaveNewCard(front, back) {
+        const newCard = {
+            id: storage.generateUUID(),
+            front: front,
+            back: back,
+            ease: 2.5,
+            interval: 1,
+            reps: 0,
+            lapses: 0,
+            dueDate: null,
+            lastReviewed: null,
+            createdAt: new Date().toISOString(),
+            card_type: this.selectedCardType,
+            isNew: true
+        };
+
+        this.currentDeck.cards.push(newCard);
+        await storage.saveDeck(this.currentDeck);
+
+        this.showView('deck');
+        this.renderDeckView();
     }
 
     showCardStats(cardId) {
@@ -2324,64 +2393,82 @@ class FlashcardApp {
 
         try {
             const verb = this.selectedVerb;
-            
-            // Generate 3 cards from the irregular verb (Russian -> English)
-            const cards = [
-                {
-                    id: storage.generateUUID(),
-                    front: `${verb.translation_ru} (infinitive)`,
-                    back: `to ${verb.infinitive.toLowerCase()}`,
-                    createdAt: new Date().toISOString(),
-                    ease: 2.5,
-                    interval: 1,
-                    reps: 0,
-                    lapses: 0,
-                    due_date: null, // Will be set after first review
-                    reviewCount: 0,
-                    isNew: true
-                },
-                {
-                    id: storage.generateUUID(),
-                    front: `${verb.translation_ru} (past simple)`,
-                    back: verb.simple_past.toLowerCase(),
-                    createdAt: new Date().toISOString(),
-                    ease: 2.5,
-                    interval: 1,
-                    reps: 0,
-                    lapses: 0,
-                    due_date: null, // Will be set after first review
-                    reviewCount: 0,
-                    isNew: true
-                },
-                {
-                    id: storage.generateUUID(),
-                    front: `${verb.translation_ru} (past participle)`,
-                    back: verb.past_participle.toLowerCase(),
-                    createdAt: new Date().toISOString(),
-                    ease: 2.5,
-                    interval: 1,
-                    reps: 0,
-                    lapses: 0,
-                    due_date: null, // Will be set after first review
-                    reviewCount: 0,
-                    isNew: true
-                }
+
+            // Check for duplicates first
+            const fronts = [
+                `${verb.translation_ru} (infinitive)`,
+                `${verb.translation_ru} (past simple)`,
+                `${verb.translation_ru} (past participle)`
             ];
 
-            // Add cards to current deck
-            this.currentDeck.cards.push(...cards);
-            await storage.saveDeck(this.currentDeck);
+            for (const front of fronts) {
+                const duplicate = await this.checkForDuplicateCard(front);
+                if (duplicate) {
+                    this.showDuplicateWarning(
+                        duplicate,
+                        () => this.proceedWithSaveIrregularVerbCards(verb),
+                        null
+                    );
+                    return;
+                }
+            }
 
-            // Refresh decks
-            this.renderDeckView();
-            this.renderOverview();
-
-            // Navigate back to deck view
-            this.showView('deck');
+            await this.proceedWithSaveIrregularVerbCards(verb);
         } catch (error) {
             console.error('Error saving irregular verb cards:', error);
             alert(window.i18n.translate('alerts.failed_save_cards'));
         }
+    }
+
+    async proceedWithSaveIrregularVerbCards(verb) {
+        const cards = [
+            {
+                id: storage.generateUUID(),
+                front: `${verb.translation_ru} (infinitive)`,
+                back: `to ${verb.infinitive.toLowerCase()}`,
+                createdAt: new Date().toISOString(),
+                ease: 2.5,
+                interval: 1,
+                reps: 0,
+                lapses: 0,
+                due_date: null,
+                reviewCount: 0,
+                isNew: true
+            },
+            {
+                id: storage.generateUUID(),
+                front: `${verb.translation_ru} (past simple)`,
+                back: verb.simple_past.toLowerCase(),
+                createdAt: new Date().toISOString(),
+                ease: 2.5,
+                interval: 1,
+                reps: 0,
+                lapses: 0,
+                due_date: null,
+                reviewCount: 0,
+                isNew: true
+            },
+            {
+                id: storage.generateUUID(),
+                front: `${verb.translation_ru} (past participle)`,
+                back: verb.past_participle.toLowerCase(),
+                createdAt: new Date().toISOString(),
+                ease: 2.5,
+                interval: 1,
+                reps: 0,
+                lapses: 0,
+                due_date: null,
+                reviewCount: 0,
+                isNew: true
+            }
+        ];
+
+        this.currentDeck.cards.push(...cards);
+        await storage.saveDeck(this.currentDeck);
+
+        this.renderDeckView();
+        this.renderOverview();
+        this.showView('deck');
     }
 
     renderIrregularVerbsView() {
@@ -2774,36 +2861,46 @@ class FlashcardApp {
             }
 
             const verb = this.selectedPhrasalVerb;
-            
-            // Generate 1 card from the phrasal verb (Russian -> English)
-            const card = {
-                id: storage.generateUUID(),
-                front: verb.translation,
-                back: `to ${verb.full_expression}`,
-                createdAt: new Date().toISOString(),
-                ease: 2.5,
-                interval: 1,
-                reps: 0,
-                lapses: 0,
-                due_date: new Date().toISOString().split('T')[0],
-                reviewCount: 0,
-                isNew: true
-            };
 
-            // Add card to current deck
-            this.currentDeck.cards.push(card);
-            await storage.saveDeck(this.currentDeck);
+            // Check for duplicate
+            const duplicate = await this.checkForDuplicateCard(verb.translation);
+            if (duplicate) {
+                this.showDuplicateWarning(
+                    duplicate,
+                    () => this.proceedWithSavePhrasalVerbCard(verb),
+                    null
+                );
+                return;
+            }
 
-            // Refresh decks
-            this.renderDeckView();
-            this.renderOverview();
-
-            // Navigate back to deck view
-            this.showView('deck');
+            await this.proceedWithSavePhrasalVerbCard(verb);
         } catch (error) {
             console.error('Error saving phrasal verb card:', error);
             alert(window.i18n.translate('alerts.failed_save_card'));
         }
+    }
+
+    async proceedWithSavePhrasalVerbCard(verb) {
+        const card = {
+            id: storage.generateUUID(),
+            front: verb.translation,
+            back: `to ${verb.full_expression}`,
+            createdAt: new Date().toISOString(),
+            ease: 2.5,
+            interval: 1,
+            reps: 0,
+            lapses: 0,
+            due_date: new Date().toISOString().split('T')[0],
+            reviewCount: 0,
+            isNew: true
+        };
+
+        this.currentDeck.cards.push(card);
+        await storage.saveDeck(this.currentDeck);
+
+        this.renderDeckView();
+        this.renderOverview();
+        this.showView('deck');
     }
 
     async initializePhrasalVerbs() {

@@ -491,6 +491,26 @@
         </div>
     </div>
 
+    <!-- Duplicate Card Warning Modal -->
+    <div id="duplicate-warning-modal" class="modal">
+        <div class="modal-content duplicate-warning-content">
+            <div class="duplicate-warning-icon">⚠️</div>
+            <h3 data-i18n="duplicate.title">Duplicate Card Found</h3>
+            <p class="duplicate-warning-text" data-i18n="duplicate.message">A card with this front side already exists:</p>
+            <div class="duplicate-card-preview">
+                <div class="duplicate-card-front" id="duplicate-card-front"></div>
+                <div class="duplicate-card-back" id="duplicate-card-back"></div>
+                <div class="duplicate-card-deck">
+                    <span data-i18n="duplicate.in_deck">In deck:</span>
+                    <strong id="duplicate-deck-name"></strong>
+                </div>
+            </div>
+            <div class="modal-actions duplicate-actions">
+                <button id="duplicate-cancel" class="secondary-btn" data-i18n="duplicate.discard">Discard</button>
+                <button id="duplicate-keep" class="primary-btn" data-i18n="duplicate.keep_anyway">Keep Anyway</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/vendor/supabase.js"></script>
     <script src="js/vendor/confetti.min.js"></script>
