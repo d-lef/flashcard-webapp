@@ -29,7 +29,12 @@ class I18n {
                 'overview.future_cards': 'Cards scheduled for future',
                 'overview.recent_activity': 'Recent Activity',
                 'overview.study_calendar': 'Study Calendar',
-                
+
+                // Search
+                'search.placeholder': 'Search cards...',
+                'search.no_results': 'No cards found',
+                'search.more_results': '+{count} more cards in this deck',
+
                 // Settings
                 'settings.title': 'Settings',
                 'settings.appearance': 'Appearance',
@@ -234,7 +239,12 @@ class I18n {
                 'overview.future_cards': 'Будущие карточки',
                 'overview.recent_activity': 'Последняя активность',
                 'overview.study_calendar': 'Календарь изучения',
-                
+
+                // Search
+                'search.placeholder': 'Поиск карточек...',
+                'search.no_results': 'Карточки не найдены',
+                'search.more_results': '+{count} карточек в этой колоде',
+
                 // Settings
                 'settings.title': 'Настройки',
                 'settings.appearance': 'Внешний вид',

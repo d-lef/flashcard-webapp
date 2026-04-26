@@ -19,20 +19,21 @@ class FlashcardApp {
 
     initializeApp() {
         this.setupEventListeners();
+        this.setupSearchListeners();
         this.loadInitialView();
         this.updateStats();
-        
+
         // Initialize translations
         if (window.i18n) {
             window.i18n.updatePageTranslations();
         }
-        
+
         // Initialize notification system
         this.initializeNotifications();
-        
+
         // Populate irregular verbs table (one-time setup)
         this.initializeIrregularVerbs();
-        
+
         // Populate phrasal verbs table (one-time setup)
         this.initializePhrasalVerbs();
     }
@@ -155,6 +156,191 @@ class FlashcardApp {
         
         // Notification settings event listeners
         this.setupNotificationEventListeners();
+    }
+
+    setupSearchListeners() {
+        const searchInput = document.getElementById('global-search-input');
+        const clearBtn = document.getElementById('clear-search');
+        const resultsDropdown = document.getElementById('search-results');
+
+        if (!searchInput) return;
+
+        let debounceTimer;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+
+            // Show/hide clear button
+            clearBtn.style.display = query.length > 0 ? 'flex' : 'none';
+
+            // Debounce search
+            clearTimeout(debounceTimer);
+            if (query.length < 2) {
+                resultsDropdown.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => this.performSearch(query), 150);
+        });
+
+        searchInput.addEventListener('focus', () => {
+            const query = searchInput.value.trim();
+            if (query.length >= 2) {
+                this.performSearch(query);
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            resultsDropdown.style.display = 'none';
+            searchInput.focus();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.global-search-container')) {
+                resultsDropdown.style.display = 'none';
+            }
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                resultsDropdown.style.display = 'none';
+                searchInput.blur();
+            }
+        });
+    }
+
+    async performSearch(query) {
+        const resultsDropdown = document.getElementById('search-results');
+        const decks = await storage.loadDecks();
+        const results = [];
+        const queryLower = query.toLowerCase();
+
+        // Search through all decks and cards
+        decks.forEach(deck => {
+            const matchingCards = deck.cards.filter(card => {
+                const frontMatch = card.front.toLowerCase().includes(queryLower);
+                const backMatch = card.back.toLowerCase().includes(queryLower);
+                return frontMatch || backMatch;
+            });
+
+            if (matchingCards.length > 0) {
+                results.push({
+                    deck: deck,
+                    cards: matchingCards.map(card => ({
+                        ...card,
+                        frontMatch: card.front.toLowerCase().includes(queryLower),
+                        backMatch: card.back.toLowerCase().includes(queryLower)
+                    }))
+                });
+            }
+        });
+
+        this.renderSearchResults(results, query);
+        resultsDropdown.style.display = 'block';
+    }
+
+    renderSearchResults(results, query) {
+        const resultsDropdown = document.getElementById('search-results');
+
+        if (results.length === 0) {
+            resultsDropdown.innerHTML = `
+                <div class="search-no-results">
+                    <div class="no-results-icon">🔍</div>
+                    <p>${window.i18n.translate('search.no_results')}</p>
+                </div>
+            `;
+            return;
+        }
+
+        const highlightMatch = (text, query) => {
+            const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
+            return this.escapeHtml(text).replace(regex, '<mark>$1</mark>');
+        };
+
+        let html = '';
+        results.forEach(group => {
+            html += `
+                <div class="search-deck-group">
+                    <div class="search-deck-header">
+                        <span class="deck-icon">📁</span>
+                        <span>${this.escapeHtml(group.deck.name)}</span>
+                    </div>
+            `;
+
+            group.cards.slice(0, 5).forEach(card => {
+                const cardTypeIcon = card.cardType === 'irregular_verbs' ? '📝' :
+                                    card.cardType === 'phrasal_verbs' ? '🔗' : '🃏';
+                html += `
+                    <div class="search-result-item" data-deck-id="${group.deck.id}" data-card-id="${card.id}">
+                        <div class="search-result-icon">${cardTypeIcon}</div>
+                        <div class="search-result-content">
+                            <div class="search-result-front">${highlightMatch(card.front, query)}</div>
+                            <div class="search-result-back">${highlightMatch(card.back, query)}</div>
+                        </div>
+                        <div class="search-result-actions">
+                            <button class="search-action-btn search-edit-btn" title="${window.i18n.translate('actions.edit')}">✏️</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (group.cards.length > 5) {
+                html += `
+                    <div class="search-result-item search-more" data-deck-id="${group.deck.id}">
+                        <div class="search-result-content" style="text-align: center; color: var(--primary-color);">
+                            ${window.i18n.translate('search.more_results').replace('{count}', group.cards.length - 5)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+        });
+
+        resultsDropdown.innerHTML = html;
+
+        // Add click handlers for results
+        resultsDropdown.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const deckId = item.dataset.deckId;
+                const cardId = item.dataset.cardId;
+
+                if (e.target.closest('.search-edit-btn')) {
+                    this.navigateToCardEdit(deckId, cardId);
+                } else if (item.classList.contains('search-more')) {
+                    this.navigateToDeck(deckId);
+                } else {
+                    this.navigateToCardStats(deckId, cardId);
+                }
+
+                // Clear search
+                document.getElementById('global-search-input').value = '';
+                document.getElementById('clear-search').style.display = 'none';
+                resultsDropdown.style.display = 'none';
+            });
+        });
+    }
+
+    escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    async navigateToCardStats(deckId, cardId) {
+        await this.openDeck(deckId);
+        this.showCardStats(cardId);
+    }
+
+    async navigateToCardEdit(deckId, cardId) {
+        await this.openDeck(deckId);
+        this.editCard(cardId);
+    }
+
+    async navigateToDeck(deckId) {
+        await this.openDeck(deckId);
     }
 
     showView(viewName) {
