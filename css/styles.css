@@ -999,6 +999,7 @@ nav::-webkit-scrollbar {
     margin: 0 auto 2rem;
     height: 400px;
     perspective: 1000px;
+    transform-style: preserve-3d;
 }
 
 .card-content {
@@ -1015,6 +1016,7 @@ nav::-webkit-scrollbar {
     padding: 2rem;
     backface-visibility: hidden;
     transition: transform 0.6s ease;
+    transform-style: preserve-3d;
 }
 
 .flashcard.flipped .front {
@@ -1046,6 +1048,8 @@ nav::-webkit-scrollbar {
     gap: 0.5rem;
     width: 100%;
     margin-top: 2rem;
+    position: relative;
+    z-index: 10;
 }
 
 .diff-btn {
@@ -1055,6 +1059,8 @@ nav::-webkit-scrollbar {
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .diff-btn.again {
